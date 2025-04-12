@@ -21,19 +21,14 @@ def main(config):
     }
 
     sel_num = img_num[config.dataset]
-    accuracy_all = np.zeros(config.train_test_num, dtype=np.float)
+    random.shuffle(sel_num)
+    test_index = sel_num
 
-    for i in range(config.train_test_num):
-        train_round = i + 1
-        random.shuffle(sel_num)
-        train_index = sel_num[0:int(round(0.8 * len(sel_num)))]
-        test_index = sel_num[int(round(0.8 * len(sel_num))):len(sel_num)]
-
-        classifier = ClassifierSolver(config, folder_path[config.dataset], train_index, test_index, train_round)
-        accuracy_all[i] = classifier.train()
-
-    accuracy_med = np.median(accuracy_all)
-    print('Testing median accuracy: %4.4f' % (accuracy_med))
+    print('Voting...')
+    classifier = ClassifierSolver(config, folder_path[config.dataset], test_index, test_index, 1)
+    model_weights_path = './path/to/model.pth'
+    arr = classifier.vote_on_predictions(model_weights_path)
+    print('Voting results:', arr)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
