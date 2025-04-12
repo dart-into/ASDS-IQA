@@ -18,7 +18,7 @@ The code is implemented using Python with the following key dependencies:
 
 ## Implementation Steps
 
-### 1. Train Classifier on Source Domain (KADID-10K)
+### 1. Train Classifier on Source Domain (KADID-10K).
 ```bash
 python classifier_train_test.py
 
