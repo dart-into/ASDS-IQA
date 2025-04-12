@@ -21,18 +21,22 @@ The code is implemented using Python with the following key dependencies:
 ### 1. Train Classifier on Source Domain (KADID-10K).
 ```bash
 python classifier_train_test.py
+ ```
 
 ### 2. Target Domain Voting (e.g., LIVEC)
 ```bash
 python vote.py
+ ```
 
 ### 3. Train IQA Model on Selected Data
  ```bash
 python train_test.py
+ ```
 
 ### 4. Test on Target Domain
  ```bash
 python evaluate.py
+ ```
 
 ## Acknowledgement
 @ARTICLE{9817377,
