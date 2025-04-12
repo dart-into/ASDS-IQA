@@ -28,6 +28,7 @@ def main(config):
     classifier = ClassifierSolver(config, folder_path[config.dataset], test_index, test_index, 1)
     model_weights_path = './path/to/model.pth'
     arr = classifier.vote_on_predictions(model_weights_path)
+
     print('Voting results:', arr)
 
 if __name__ == '__main__':
