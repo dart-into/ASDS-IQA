@@ -3,106 +3,49 @@ import torchvision
 import dataloader.dataset_folders as dataset_folders
 
 
-
-class DataLoader(object):
-    """Dataset class for IQA databases"""
-
+class DataLoader:
     def __init__(self, dataset, path, img_indx, patch_size, patch_num, batch_size=1, istrain=True):
-
         self.batch_size = batch_size
         self.istrain = istrain
 
-        if (dataset == 'live') | (dataset == 'csiq') | (dataset == 'tid2013') | (dataset == 'livec') | (dataset == 'kadid-10k') | (dataset == 'bid'):
-            # Train transforms
-            if self.istrain == True:
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((384, 384)),
-                    torchvision.transforms.RandomHorizontalFlip(),
-                    # selfRandomCrop(size=patch_size),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))
-                ])
-            # Test transforms
-            else:
-                # print("000")
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((384, 384)),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    # selfFiveCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))
-                ])
-        elif (dataset == 'koniq-10k') | (dataset == 'SPAQ'):
-            if self.istrain == True:
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((384, 384)),
-                    torchvision.transforms.RandomHorizontalFlip(),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))])
-            else:
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((384, 384)),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))])
+        base_transforms = [
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(
+                mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225)
+            )
+        ]
 
-        elif dataset == 'cid2013':
-            if self.istrain == True:
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.RandomHorizontalFlip(),
-                    torchvision.transforms.Resize((400, 300)),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))])
-            else:
-                transforms = torchvision.transforms.Compose([
-                    torchvision.transforms.Resize((400, 300)),
-                    torchvision.transforms.RandomCrop(size=patch_size),
-                    torchvision.transforms.ToTensor(),
-                    torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
-                                                     std=(0.229, 0.224, 0.225))])
 
-        if dataset == 'live':
-            self.data = dataset_folders.LIVEFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'bid':
-            self.data = dataset_folders.bidFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'livec':
-            self.data = dataset_folders.LIVEChallengeFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'csiq':
-            self.data = dataset_folders.CSIQFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'koniq-10k':
-            self.data = dataset_folders.Koniq_10kFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'cid2013':
-            self.data = dataset_folders.CID2013Folder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'tid2013':
-            self.data = dataset_folders.TID2013Folder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'kadid-10k':
-            self.data = dataset_folders.Kadid_10kFolder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
-        elif dataset == 'SPAQ':
-            self.data = dataset_folders.SPAQdataFloder(
-                root=path, index=img_indx, transform=transforms, patch_num=patch_num)
+        resize_size = (384, 384)
+        transforms = [torchvision.transforms.Resize(resize_size)]
 
+        if istrain:
+            transforms.append(torchvision.transforms.RandomHorizontalFlip())
+
+        transforms.append(torchvision.transforms.RandomCrop(size=patch_size))
+        transforms.extend(base_transforms)
+
+        self.transforms = torchvision.transforms.Compose(transforms)
+
+        dataset_mapping = {
+            'bid': dataset_folders.bidFolder,
+            'livec': dataset_folders.LIVEChallengeFolder,
+            'koniq-10k': dataset_folders.Koniq_10kFolder,
+            'kadid-10k': dataset_folders.Kadid_10kFolder
+        }
+
+        self.data = dataset_mapping[dataset](
+            root=path,
+            index=img_indx,
+            transform=self.transforms,
+            patch_num=patch_num
+        )
 
     def get_data(self):
-        if self.istrain:
-            dataloader = torch.utils.data.DataLoader(
-                self.data, batch_size=self.batch_size, shuffle=True, num_workers=4)
-        else:
-            dataloader = torch.utils.data.DataLoader(
-                self.data, batch_size=1, shuffle=False, num_workers=4)
-        return dataloader
+        return torch.utils.data.DataLoader(
+            self.data,
+            batch_size=self.batch_size if self.istrain else 1,
+            shuffle=self.istrain,
+            num_workers=4
+        )
