@@ -1,0 +1,74 @@
+import torch
+import argparse
+import random
+import numpy as np
+
+from ClassifierSolver import ClassifierSolver
+
+import os
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
+torch.cuda.set_device(0)
+
+
+def main(config):
+    folder_path = {
+        'livec': './livec/',
+        'koniq-10k': './koniq-10k/',
+        'kadid-10k': './kadid-10k/',
+        'bid':'./bid/'
+    }
+
+    img_num = {
+        'livec': list(range(0, 1162)),
+        'koniq-10k': list(range(0, 10073)),
+        'kadid-10k': list(range(0, 10125)),
+        'bid': list(range(0, 586))
+    }
+
+
+    sel_num = img_num[config.dataset]
+
+
+    # 随机打乱选择的图像索引
+    random.shuffle(sel_num)
+
+    # 这里选择所有样本进行预测
+    test_index = sel_num
+
+    print('Voting...')
+    
+    # 创建分类任务的求解器
+    classifier = ClassifierSolver(config, folder_path[config.dataset], test_index, test_index, 1)
+
+    # 假设模型权重的路径
+    model_weights_path = './models/densenet.pth'  # 请替换为实际路径
+
+    # 使用投票预测方法
+    arr = classifier.vote_on_predictions( model_weights_path)
+
+    # 输出结果
+    print('Voting results:', arr)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', dest='dataset', type=str, default='livec',
+                        help='Support datasets: livec|koniq-10k|cid2013|live|csiq|tid2013|SPAQ|kadid-10k|bid')
+    parser.add_argument('--train_patch_num', dest='train_patch_num', type=int, default=1,
+                        help='Number of sample patches from training image')
+    parser.add_argument('--test_patch_num', dest='test_patch_num', type=int, default=1,
+                        help='Number of sample patches from testing image')
+    parser.add_argument('--lr', dest='lr', type=float, default=2e-5, help='Learning rate')
+    parser.add_argument('--weight_decay', dest='weight_decay', type=float, default=0, help='Weight decay')
+    parser.add_argument('--lr_ratio', dest='lr_ratio', type=int, default=10,
+                        help='Learning rate ratio for hyper network')
+    parser.add_argument('--batch_size', dest='batch_size', type=int, default=32, help='Batch size')
+    parser.add_argument('--epochs', dest='epochs', type=int, default=50, help='Epochs for training')
+    parser.add_argument('--patch_size', dest='patch_size', type=int, default=224,
+                        help='Crop size for training & testing image patches')
+    parser.add_argument('--train_test_num', dest='train_test_num', type=int, default=1, help='Train-test times')
+    parser.add_argument('--mode', dest='mode', type=str, choices=['train', 'test'], default='test',
+                        help='Mode to run: train or test')
+    
+    config = parser.parse_args()
+    main(config)
